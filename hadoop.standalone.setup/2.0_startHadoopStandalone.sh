@@ -5,6 +5,9 @@
 
 EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hadoop-3.0.0/"
 
+NAMENODE_DATA_DIR=/home/johannes/Studium/Masterthesis/work/localinstance/hadoop-tmp/namenode
+DATANODE_DATA_DIR=/home/johannes/Studium/Masterthesis/work/localinstance/hadoop-tmp/datanode
+
 # set to the root of your Java installation
 export JAVA_HOME=/usr/java/latest
 echo "Set JAVA_HOME to $JAVA_HOME"
@@ -14,6 +17,9 @@ cd $EXEC_DIR
 #reset hdfs before
 read -p "Reset/Format HDFS? [Y/n]:" delconf
 if [ $delconf == 'Y' ] ; then
+	echo "Delete temp directories $NAMENODE_DATA_DIR and $DATANODE_DATA_DIR"
+	rm -r $NAMENODE_DATA_DIR/*
+	rm -r $DATANODE_DATA_DIR/*
 	echo "Reset/Format HDFS"
 	./bin/hdfs namenode -format
 fi
