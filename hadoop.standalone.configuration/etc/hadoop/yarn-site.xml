@@ -22,8 +22,6 @@
         <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME</value>
     </property>
 
-    <!-- Following configuration depends on the resources of the local Hadoop Standalone instance.
-         Currently exactly 3GB and 4 Cores are available on local instance for execute and jobs-->
 	<!-- Properties specific for resource allocation -->
 	<property>
     	<name>yarn.scheduler.minimum-allocation-mb</name>
@@ -32,6 +30,12 @@
 	<property>
 		<name>yarn.scheduler.maximum-allocation-mb</name>
 		<value>3072</value>
+	</property>
+
+	<!-- On Debug Standalone Cluster no retry of application execution is necessary -->
+	<property>
+		<name>yarn.resourcemanager.am.max-attempts</name>
+		<value>1</value>
 	</property>
 
 	<!-- Properties specific for local instance / Nodemanager-->

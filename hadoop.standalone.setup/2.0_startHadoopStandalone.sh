@@ -17,6 +17,9 @@ cd $EXEC_DIR
 #reset hdfs before
 read -p "Reset/Format HDFS? [Y/n]:" delconf
 if [ $delconf == 'Y' ] ; then
+    
+    echo "Remove Apache Hadoop Logs"
+	rm -r $EXEC_DIR/logs/*
 	echo "Delete temp directories $NAMENODE_DATA_DIR and $DATANODE_DATA_DIR"
 	rm -r $NAMENODE_DATA_DIR/*
 	rm -r $DATANODE_DATA_DIR/*

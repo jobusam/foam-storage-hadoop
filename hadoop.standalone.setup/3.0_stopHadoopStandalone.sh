@@ -14,7 +14,3 @@ echo "Stop YARN Resource Manager"
 ./sbin/stop-yarn.sh
 
 echo "Stopped Apache Hadoop Standalone instance on local node (Pseudo-Distributed)"
-
-#echo "Remove Spark Log and Work directory -> Cleanup"
-#rm -r $EXEC_DIR/logs/*
-
