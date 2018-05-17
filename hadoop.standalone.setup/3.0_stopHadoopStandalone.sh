@@ -3,7 +3,7 @@
 # Author: jobusam
 # Work: Masterthesis
 
-EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hadoop-3.0.0/"
+EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hadoop-3.1.0/"
 
 cd $EXEC_DIR 
 

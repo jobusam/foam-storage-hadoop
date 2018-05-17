@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # Start hadoop dfs daemons.
-# Optinally upgrade or rollback dfs state.
+# Optionally upgrade or rollback dfs state.
 # Run this on master node.
 
 
@@ -24,6 +24,11 @@
 # This is a stripped version that only starts a namenode and a datanode (no secondary name node or designated name node (HA-Feature))!
 #----------------------
 
+
+
+# Start hadoop dfs daemons.
+# Optinally upgrade or rollback dfs state.
+# Run this on master node.
 
 ## startup matrix:
 #
@@ -33,7 +38,7 @@
 #    if hdfs_subcmd_user is not defined, error
 #
 # For secure daemons, this means both the secure and insecure env vars need to be
-# defined.  e.g., HDFS_DATANODE_USER=root HADOOP_SECURE_DN_USER=hdfs
+# defined.  e.g., HDFS_DATANODE_USER=root HDFS_DATANODE_SECURE_USER=hdfs
 #
 
 ## @description  usage info
