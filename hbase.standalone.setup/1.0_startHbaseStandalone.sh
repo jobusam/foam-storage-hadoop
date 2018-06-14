@@ -3,7 +3,7 @@
 # Author: jobusam
 # Work: Masterthesis
 
-EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hbase-1.4.3/"
+EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hbase-3.0.0-SNAPSHOT/"
 
 echo "Start local HBASE instance"
 
