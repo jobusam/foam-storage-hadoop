@@ -3,7 +3,12 @@
 # Author: jobusam
 # Work: Masterthesis
 
-EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hbase-3.0.0-SNAPSHOT/"
+# latestes HBASE build
+# EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hbase-3.0.0-SNAPSHOT/"
+
+# official HBASE build
+EXEC_DIR="/home/johannes/Studium/Masterthesis/work/localinstance/hbase-1.1.2/"
+
 
 echo "Stop local HBASE instance"
 

@@ -1,0 +1,180 @@
+Schritt für Schritt-Anleitung zur Installation von Solr in Hbase:
+
+-> Installation nach https://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.6.5/bk_solr-search-installation/bk_solr-search-installation.pdf
+   -> S. 8
+   -> Die Installation erfolgt aktuell nur auf dem NameNode. 
+      Daher müssen folgende Kommandos auch nur auf dem NameNode ausgeführt werden.
+ $ cd /tmp
+ $ wget http://public-repo-1.hortonworks.com/HDP-SOLR/hdp-solr-ambari-mp/solr-service-mpack-3.0.0.tar.gz
+ $ ambari-server install-mpack --mpack=/tmp/solr-service-mpack-3.0.0.tar.gz
+ $ ambari-server restart
+ -> Danach kann Solr über Ambari Service aktiviert werden.
+ -> Solr ist erreichbar unter http://[Cluster-NameNode-Name]:8983/solr/#/
+
+Achtung: Derzeit ist Solr nur auf dem Name Node installiert und nicht auf den Data Nodes!
+-> Aber die Cores werden im HDFS abgespeichert! 
+-> Über Ambari kann Solr aber auch auf mehreren Knoten verteilt werden! Dies muss noch getestet werden...
+-> Nachfolgende Konfiguration wird daher auch nur auf dem NameNode durchgeführt, da auf den DataNodes kein Solr
+und auch kein Lily-HBase-Indexer installiert ist. Dies könnte zu einem Performance-Engpass führen!!!!!
+
+
+---------------------------------------------------------------
+---------------------------------------------------------------
+Konfiguration mit Hbase-Indexer:
+-> Zuerst HBASE Table forensicData und alte HDFS-Einträge löschen (Dies kann mit der datenimport durchgeführt werden)!
+
+Die Installation erfolgt nach https://doc.lucidworks.com/lucidworks-hdpsearch/3.0.0/Guide-Jobs.html#hbase-indexer
+
+-> Es müssen immer die Zugriffsrechte geprüft werden!
+-> In den nachfolgenden Kommandos muss für "[cluster-name]" der Full Qualified Domain Name des Clusters eingetragen werden!
+-> Im aktuellen Cluster gibt es 3 Knoten (1x NameNode ("nn"), 2x DataNodes ("dn1","dn2")).
+
+-----------------------------------
+1) /opt/lucidworks-hdpsearch/hbase-indexer/conf
+   -> hbase-indexer-site.xml:
+
+<configuration>
+   <property>
+      <name>hbaseindexer.zookeeper.connectstring</name>
+      <value>dn1.[cluster-name]:2181,dn2.[cluster-name]:2181,nn.[cluster-name]:2181</value>
+   </property>
+   <property>
+      <name>hbase.zookeeper.quorum</name>
+      <value>dn1.[cluster-name],dn2.[cluster-name],nn.[cluster-name]</value>
+   </property>
+</configuration>
+
+Auch der Java-Pfad für den Lily-HBase-Indexer muss korrekt gesetzt werden:
+-> /opt/lucidworks-hdpsearch/hbase-indexer/conf/hbase-indexer-env.sh
+export JAVA_HOME=/usr/jdk64/jdk1.8.0_112
+-> Es muss auf die richtige Java-Version geachtet werden.
+
+---------------------------------------
+2) Nachfolgend Konfiguration muss in der Datei "hbase-site.xml" für alle Knoten gesetzt werden:
+-> Dies ist über Ambari sehr einfach möglich.
+<configuration>
+   <!-- SEP is basically replication, so enable it -->
+   <property>
+      <name>hbase.replication</name>
+      <value>true</value>
+   </property>
+   <property>
+      <name>replication.source.ratio</name>
+      <value>1.0</value>
+   </property>
+   <property>
+      <name>replication.source.nb.capacity</name>
+      <value>1000</value>
+   </property>
+   <property>
+      <name>replication.replicationsource.implementation</name>
+      <value>com.ngdata.sep.impl.SepReplicationSource</value>
+   </property>
+</configuration>
+
+-> Nun muss HBase über die Ambari-Oberfläche neu gestartet werden.
+
+---------------------------------------
+3) Kopiere die hbase-site.xml-Datei von HBase in das Konfigurationsverzeichnis des Lily-HBase-Indexers 
+   (Nur auf NameNode, da nur dort der HBase-Indexer installiert ist.
+cp /etc/hbase/conf/hbase-site.xml /opt/lucidworks-hdpsearch/hbase-indexer/conf/
+
+---------------------------------------
+4) Kopiere folgende JAR-Dateien in das HBase-Lib-Verzeichnis. Dies muss auf allen Knoten durchgeführt werden!
+-> Auf dem NameNode:
+cp /opt/lucidworks-hdpsearch/hbase-indexer/lib/hbase-sep-* /usr/hdp/2.6.5.0-292/hbase/lib/
+
+Auf den beiden DataNodes mithilfe von SecureCopy:
+scp /opt/lucidworks-hdpsearch/hbase-indexer/lib/hbase-sep-* root@dn1.[cluster-name]:/usr/hdp/2.6.5.0-292/hbase/lib/
+scp /opt/lucidworks-hdpsearch/hbase-indexer/lib/hbase-sep-* root@dn2.[cluster-name]:/usr/hdp/2.6.5.0-292/hbase/lib/
+
+-> Starte HBase nochmals neu (via Ambari-Oberfläche)
+
+---------------------------------------
+5) Starte den Lily-HBase-Indexer auf dem NameNode im Hintergrund
+/opt/lucidworks-hdpsearch/hbase-indexer/bin/hbase-indexer server &
+-> Achtung: Sobald der Cluster neugestartet wird, muss auch dieser Service manuell neu gestartet werden.
+-> TODO: Starten des Servers in Startup-Skripte mitaufnehmen. 
+
+---------------------------------------
+6) Kopiere die Indexer-Konfiguration "forensicindexer.xml" in den Konfigurations-Ordner des Lily-HBase-Indexers.
+   (siehe Projekt-Ordner foam-storage-hadoop-solr.standalone.configuration/lily-hbase-indexer/forensicIndexer.xml) 
+scp foam-storage-hadoop-solr.standalone.configuration/lily-hbase-indexer/forensicIndexer.xml root@nn.[cluster-name]:/opt/lucidworks-hdpsearch/hbase-indexer/conf/
+
+---------------------------------------
+7) Erstelle einen Solr-Index / Solr-Collection auf dem NameNode
+-> $ su - solr     #Switch root user to solr user!!!
+$ /opt/lucidworks-hdpsearch/solr/bin/solr create -c forensicMetadata -d data_driven_schema_configs -n myCollConfigs -s 2 -rf 2
+-> -c = name = name of the new collection (solr cloud) / core on solr standalone
+-> -d = confdir = data_driven_schema_configs . A collection must have a configSet, 
+	which at a minimum includes the two main configuration files for Solr: 
+	the schema file (named either managed-schema or schema.xml) 
+	and solrconfig.xml. Default = _default (omit for Solr 7.4)
+-> -n = configName = myCollConfigs = configuration file?
+-> -s = Anzahl der Shards = 2 
+-Y -rf = replicationFactor = 2
+
+--------------------------------------------
+8) Erstelle einen Lily-HBase-Indexer
+  -> Achtung: Solr-index aus Schritt 7) muss unbedingt vorher erstellt werden!
+  -> Achtung: Beim Hinzufügen des Indexers, muss der korrekte Znode Path angegeben werden (nur auf Testcluster wichtig, lokal geht das auch so)
+	-> siehe dn2.[cluster-name]:2181/solr -> /solr ist der Znode Path bei ZooKeeper!
+$ su - solr     #Switch root user to solr user!!!
+$ cd /opt/lucidworks-hdpsearch/hbase-indexer/
+$ ./bin/hbase-indexer add-indexer -n forensicIndexer -c conf/forensicIndexer.xml -cp solr.zk=nn.[cluster-name]:2181,dn1.[cluster-name]:2181,dn2.[cluster-name]:2181/solr -cp solr.collection=forensicMetadata
+
+--------------------------------------------
+9) Nun können forensische Daten mit der Datenimport-Anwendung "foam-data-import" importiert werden.
+-> Achtung: In HBase musst der "Replication Scope" der Tabelle "forensicData" auf 1 gesetzt sein.
+-> Dies wird in der Datenimport-Anwendung beim Anlegen schon automatisch gesetzt.
+
+--------------------------------------------
+10) Starte die Spark-Datenverarbeitung (foam-processing-spark), um die Medientypen und Hashsummen zu berechnen.
+
+--------------------------------------------
+11) Nach der Verarbeitung sollten auch schon alle Daten in Solr indexiert sein.
+    Achtung: Um die Daten dann auch über Solr auszulesen, muss der Index neu aufgebaut werden.
+    Folgender Befehl tut dies manuell!
+$ curl http://nn.[cluster-name]:8983/solr/forensicMetadata/update?commit=true
+
+
+Hinweis: Selbst wenn die Tabelle in HBase neu erstellt wird, funktioniert die Indizierung.
+	-> Aber zuvor sollt die Collection in Solr gelöscht werden!
+
+------------------------------------------------------------------------
+12) Nun kann auch noch die erstelle Banana UI installiert werden, um die Daten besser visualisieren zu können!
+-> https://github.com/Lucidworks/banana/
+
+-> Kopiere das Src-Verzeichnis von Banana auf den Solr-Webserver (Nur auf dem NameNode)
+Kopiere das Src-Verzeichnis auf den NameNode
+$ cd banana-git-home
+$ zip -r src.zip src/
+$ scp src.zip hdtest@nn.[cluster-name]:/home/hdtest/ui
+
+Via SSH auf NameNode anmelden und folgende Befehle ausführen:
+$ cd /home/hdtest/ui
+$ unzip src.zip
+$ cd /opt/lucidworks-hdpsearch/solr/server/solr-webapp/webapp/
+$ cp -R /home/hdtest/ui/src ./banana
+
+------------------------------------------------------------------------
+13) Nun kann die Default Banana UI mit folgender URL angezeigt werden: 
+-> http://nn.[cluster-name]:8983/solr/banana/index.html#/dashboard
+-> Danach muss die Banana-Konfiguration manuell geladen werden
+   -> (siehe Konfiguration unter foam-storage-hadoop/solr.standalone.configuration/banana-ui)
+
+14) Alternativ zu Schritt 13) kann die erstelle Banana-UI-Konfiguration unter
+    foam-storage-hadoop/solr.standalone.configuration/banana-ui
+    auch fest in das Solr-Webverzeichnis eingebettet werden!
+
+Folgender Befehl kopiert die Konfigurationsdatei in die richtige Stelle im Solr/Banana-UI-Webverzeichnis:
+$ scp ForensicData_Init_Configuration_v.0.4_a.json hdtest@nn.[cluster-name]:/opt/lucidworks-hdpsearch/solr/server/solr-webapp/webapp/banana/app/dashboards/
+$ chown -R solr:solr banana/
+
+-> Nun muss noch ein symbolischer Link auf die Konfigurationsdatei gesetzt werden! 
+   (unter /opt/lucidworks-hdpsearch/solr/server/solr-webapp/webapp/banana/app/dashboards
+$ ln -s ForensicData_Init_Configuration_v.0.4_a.json default.json
+
+-> Aber Vorsicht die Configuration enthält den Namen der Solr-Collection und deren einzelne Cores.
+   Wenn die Collection mal geändert werden sollte, dann muss auch die UI entsprechend angepasst werden.
+

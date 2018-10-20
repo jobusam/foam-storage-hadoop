@@ -1,0 +1,55 @@
+Some useful information and commands about Solr and Lily HBase Indexer:
+
+
+----------------Solr Commands--------------------------
+#start solr in cloud mode (5.5.1)
+./bin/solr start -c -z localhost:2181
+
+# Create an index
+bin/solr create -c forensicMetadata -d data_driven_schema_configs -n myCollConfigs -s 2 -rf 2
+
+#for solr 7.4
+bin/solr create -c forensicMetadata -n myCollConfigs -s 2 -rf 2
+
+# Delete data from index
+curl "http://localhost:8983/solr/forensicMetadata/update?stream.body=<delete><query>*:*</query></delete>&commit=true"
+
+# stop solr
+./bin/solr stop
+
+# after changes in hbase following solr command must be executed to update the solr index. There is also something like an auto-commit!
+curl http://localhost:8983/solr/forensicMetadata/update?commit=true
+
+
+#Eine Collection im Cloud Mode von Solr auf Cluster löschen:
+curl "http://[cluster-instance-name]:8983/solr/admin/collections?action=DELETE&name=forensicMetadata"
+
+
+
+-------------HBase Lily Indexer---------------------
+
+# build hbase indexer from git repo:
+-> checkout in git repo
+-> $ mvn clean package -Pdist -DskipTests
+-> The final tar archive is located in hbase-indexer-dist/target
+
+---------------------
+
+# configuration für hbase indexer -> siehe conf folder!
+
+# start hbase-indexer in der console
+./bin/hbase-indexer server
+
+# listet alle hbase-indexers in der console
+./bin/hbase-indexer list-indexers
+
+# add a forensicIndexer configuration:
+./bin/hbase-indexer add-indexer -n forensicIndexer -c conf/forensicIndexer.xml -cp solr.zk=localhost:2181 -cp solr.collection=forensicMetadata
+
+
+# delete  forensicIndexer configuration:
+./bin/hbase-indexer delete-indexer -n forensicIndexer
+
+
+
+

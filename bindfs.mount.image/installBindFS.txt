@@ -1,0 +1,17 @@
+Install bindFS on test cluster
+
+1) Install rpm "fuse"
+$ sudo yum install fuse fuse-devel  // use version and higher 2.8.0
+
+2) Download bindFS from Website
+$ wget https://bindfs.org/downloads/bindfs-1.13.9.tar.gz
+$ tar -xzf bindfs-1.13.9.tar.gz 
+
+3) Build bindFS on local cluster instance
+$ cd bindfs-1.13.9/
+$ ./configure
+$ make
+$ sudo make install
+
+
+

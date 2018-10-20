@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<indexer table="forensicData">
+  <field name="filePath" value="metadata:filePath"/>
+  <field name="fileType" value="metadata:fileType"/>
+  <field name="fileSize" value="metadata:fileSize"/>
+  <field name="owner" value="metadata:owner"/>
+  <field name="group" value="metadata:group"/>
+  <field name="permissions" value="metadata:permissions"/>
+  <field name="lastModified" value="metadata:lastModified"/>
+  <field name="lastChanged" value="metadata:lastChanged"/>
+  <field name="lastAccessed" value="metadata:lastAccessed"/>
+  <field name="created" value="metadata:created"/>
+  <field name="mediaType" value="metadata:mediaType"/>
+  <field name="fileHash" value="metadata:fileHash"/>
+  <!--Binary fields are not supported for indexing with solr cell-->
+  <!--<field name="content" value="content:fileContent"/>-->
+</indexer>

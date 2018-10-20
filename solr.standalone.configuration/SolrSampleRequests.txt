@@ -1,0 +1,25 @@
+ 
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=*&fq=fileType:DATA_FILE"
+# q = * // search for all entries
+# fq =fileType:DATA_FILE // show data files only (no directories or symbolic links)
+
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=id:row2&fq=fileType:DATA_FILE"
+# q = document with hbase-id row2
+
+# Search for all entries that contain a media type field
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=mediaType:*"
+
+# Search for all JPEG images
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=mediaType:image/jpeg"
+
+# Search for all JPEG images, but only show the filePath and the fileSize
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=mediaType:image/jpeg&fl=filePath"
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=mediaType:image/jpeg&fl=filePath,fileSize"
+
+# Search for all images (jpeg,png,bmp,...) and display onyl their file path
+$ curl "http://localhost:8983/solr/forensicMetadata/query?q=mediaType:image/*&fl=filePath"
+
+
+# Search postfix to search for files with file size from 1MB to 1 TB
+fileSize:[1000000 TO 1000000000
+
